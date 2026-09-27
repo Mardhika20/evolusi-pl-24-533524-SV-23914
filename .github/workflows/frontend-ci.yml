@@ -1,0 +1,128 @@
+name: Frontend CI CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - 'feature/**'
+      - 'fix/**'
+
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+
+  lint:
+    name: Lint Frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Mengambil source code
+        uses: actions/checkout@v4
+
+      - name: Menyiapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Menginstal dependency
+        run: npm ci
+
+      - name: Menjalankan lint
+        run: npm run lint
+
+
+  test:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    needs: lint
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Mengambil source code
+        uses: actions/checkout@v4
+
+      - name: Menyiapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Menginstal dependency
+        run: npm ci
+
+      - name: Menjalankan unit test Vitest
+        run: npm run test:unit -- --run
+
+
+  build:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: test
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Mengambil source code
+        uses: actions/checkout@v4
+
+      - name: Menyiapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Menginstal dependency
+        run: npm ci
+
+      - name: Menjalankan build
+        env:
+          VITE_API_URL: http://127.0.0.1:8000
+        run: npm run build
+
+      - name: Menyimpan hasil build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+
+  deploy:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: build
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Mengambil hasil build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Menampilkan isi dist
+        run: |
+          echo "Isi folder dist:"
+          find dist -type f -print
+
+      - name: Simulasi deploy
+        run: |
+          echo "Deploy frontend berhasil disimulasikan."
+          echo "Artifact dist diterima dari job build."
