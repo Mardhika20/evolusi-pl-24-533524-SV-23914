@@ -3,7 +3,7 @@ import { formatPrice } from './formatPrice'
 
 describe('formatPrice', () => {
   it('mengubah angka menjadi format Rupiah', () => {
-    expect(formatPrice(25000)).toBe('Rp 99.999')
+    expect(formatPrice(25000)).toBe('Rp 25.000')
   })
 
   it('dapat memformat harga produk lainnya', () => {
